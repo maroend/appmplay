@@ -13,5 +13,13 @@ var routes = [
     {
       path: '/login/',
       url: 'index.html',
+    },
+    {
+      path: '/search/',
+      url: 'views/search.html',
+    },
+    {
+      path: '/video/',
+      url: 'views/video.html',
     }
   ];

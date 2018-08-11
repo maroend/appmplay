@@ -31,6 +31,9 @@ var app = {
     usuario:"",
     password:"",
     name:"",
+    hostname:"http://oronoticias.org",
+    urlVideo:"",
+    tituloVideo:"",
 
     // Application Constructor
     initialize: function() {
@@ -88,7 +91,7 @@ var app = {
         
 
         app7.request({
-           url: 'http://localhost:8030/mplay/api/login.php',
+           url: this.hostname+'/mplay/api/login.php',
            data:{username:this.usuario,password:this.password},
            method:'POST',
            crossDomain: true,
@@ -138,7 +141,7 @@ var app = {
       this.password = $$('#frm_password').val();
 
       app7.request({
-           url: 'http://localhost:8030/mplay/api/users.php',
+           url: this.hostname+'/mplay/api/users.php',
            data:{name:this.name,username:this.usuario,password:this.password},
            method:'POST',
            crossDomain: true,
@@ -174,7 +177,7 @@ var app = {
           app7.preloader.show();
 
           app7.request({
-           url: 'http://localhost:8030/mplay/api/contacto.php',
+           url: this.hostname+'/mplay/api/contacto.php',
            data:{nombre:nombre,email:email,asunto:asunto,comentarios:comentarios},
            method:'POST',
            crossDomain: true,
@@ -227,7 +230,15 @@ $$(document).on('page:init', '.page[data-name="home"]', function (e) {
       app7.panel.allowOpen = true;
       app7.panel.enableSwipe('left');
 
-      
+      var $ptrContent = app7.ptr.create('.ptr-content');
+
+      $ptrContent.on('refresh', function (e) {
+          RefreshVideos();
+           getSlider();
+      });
+
+
+      getSlider();
       getVideos();
 
 
@@ -237,18 +248,92 @@ $$(document).on('page:init', '.page[data-name="home"]', function (e) {
   }
 });*/
 
+});
 
+
+$$(document).on('page:init', '.page[data-name="search"]', function (e) {
+  
+       //buscar("olimpiadas");
+
+        $$('#search').on('keyup', function (e) {
+
+          var keyCode = e.keyCode || e.which;
+          
+          if (keyCode === 13) { 
+              Search_videos($$('#search').val());
+              
+              e.preventDefault();
+          return false;
+          }else{
+
+        
+           }
+
+
+        });     
 
 });
 
 
-function getVideos(){
 
+
+
+function Search_videos(buscar){
+
+ var buscar = buscar;
+
+ $$('#list-search').html("");
 
  app7.preloader.show();
 
   app7.request({
-           url: 'http://localhost:8030/mplay/api/videos.php',
+           url: app.hostname+'/mplay/api/search.php?buscar='+buscar,
+           method:'GET',
+           crossDomain: true,
+           success:function(data){
+            
+            app7.preloader.hide();
+            
+            var objson = JSON.parse(data);
+            var video = "";
+            
+            if(objson.data == "NO_ENCONTRADOS"){
+
+              app7.dialog.alert("No se encotraron resultados");
+
+            }else{
+             
+             for(x in objson.data){ 
+                  
+                  //console.log(objson.data[x].titulo);
+
+                  video = '<li><a href="#" class="item-link item-content"><div class="item-media"><img src="img/post2.jpg" width="80"/></div><div class="item-inner"><div class="item-title-row"><div class="item-title">'+objson.data[x].titulo+'</div><div class="item-after"></div></div><div class="item-subtitle">'+objson.data[x].autor+'</div></div></a></li>';
+
+                   $$('#list-search').append(video);
+
+             }
+           }
+           
+           },
+           error:function(error){
+
+            app7.preloader.hide();
+            app7.dialog.alert("Hubo un error por favor intenta nuevamente");
+            console.log(error);
+           }
+           
+        });
+
+
+}
+
+
+function getVideos(){
+
+ app7.preloader.show();
+
+  app7.request({
+           url: app.hostname+'/mplay/api/videos.php',
            method:'GET',
            crossDomain: true,
            success:function(data){
@@ -256,9 +341,18 @@ function getVideos(){
             app7.preloader.hide();
 
             var objson = JSON.parse(data);
+            var video = "";
+            var img ="";
+
              
              for(x in objson.data){
+
                   console.log(objson.data[x].titulo);
+                  img = app.hostname+'/mplay/img/'+objson.data[x].imagen;
+                  video = '<div class="item"><div class="post"><img src="'+img+'" onClick="goVideo(\''+objson.data[x].titulo+'\',\''+objson.data[x].urlvideo+'\')"><div class="time">10:06</div></div><h5>'+objson.data[x].titulo+'</h5><p>'+objson.data[x].autor+'</p><p>25 Visitas | 20 Agosto</p></div>';
+
+                   $$('#content-videos').append(video);
+
              }
            
            },
@@ -273,3 +367,108 @@ function getVideos(){
 
 
 }
+
+
+function RefreshVideos(){
+
+   app7.request({
+           url: app.hostname+'/mplay/api/videos.php',
+           method:'GET',
+           crossDomain: true,
+           success:function(data){
+            
+            app7.ptr.done();
+            $$('#content-videos').html("");
+                  
+            var objson = JSON.parse(data);
+            var video = "";
+             
+             for(x in objson.data){
+                  console.log(objson.data[x].titulo);
+
+                  video = '<div class="item"><div class="post"><img src="img/post2.jpg"><div class="time">10:06</div></div><h5>'+objson.data[x].titulo+'</h5><p>'+objson.data[x].autor+'</p><p>25 Visitas | 20 Agosto</p></div>';
+
+                   $$('#content-videos').append(video);
+
+             }
+           
+           },
+           error:function(error){
+
+            app7.preloader.hide();
+            app7.dialog.alert("Hubo un error por favor intenta nuevamente");
+            console.log(error);
+           }
+           
+        });
+
+
+
+  }
+
+
+
+
+  function getSlider(){
+
+
+ app7.preloader.show();
+
+  app7.request({
+           url: app.hostname+'/mplay/api/slider.php',
+           method:'GET',
+           crossDomain: true,
+           success:function(data){
+            
+            app7.preloader.hide();
+
+            var objson = JSON.parse(data);
+            var video = "";
+             
+             var swiper = app7.swiper.get('.swiper-container');
+             swiper.removeAllSlides();
+
+             for(x in objson.data){
+                  console.log(objson.data[x].titulo);
+
+                  var slide = '<div class="swiper-slide"><div class="mask"></div><img src="img/slider1.jpg" /><div class="caption"><h2>10 very beautiful rugby ball catches</h2><p>10 Junio 2018</p><button>Play Now</button></div></div>';
+                      
+                  swiper.appendSlide(slide);
+
+
+             }
+           
+           },
+           error:function(error){
+
+            app7.preloader.hide();
+            app7.dialog.alert("Hubo un error por favor intenta nuevamente");
+            console.log(error);
+           }
+           
+        });
+
+
+}
+
+
+
+
+function goVideo(titulo,url){
+
+      app.tituloVideo = titulo;
+      app.urlVideo = url;
+      //alert(url);
+      mainView.router.navigate('/video/',{animate:true});
+
+}
+
+
+$$(document).on('page:init', '.page[data-name="video"]', function (e) {
+  
+        console.log(app.urlVideo);
+        $$('.videoyoutube iframe').remove();
+        $$('<iframe width="100%" height="200" frameborder="0"  allowfullscreen></iframe>').attr('src',app.urlVideo).appendTo('.videoyoutube');
+
+      
+       });
